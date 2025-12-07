@@ -35,7 +35,7 @@ const val EMAIL_SUFFIX : String = "@djifly.pl"
 const val PASS_PREFIX : String = "DJIfly24"
 const val START_COUNT : Int = 0
 const val CYCLE_COUNT : Int = 100
-const val GEMINI_API_KEY = "AIzaSyBQkgMcihZgn9Jpf0xmiwHLcqXV4EP3sw8"
+const val GEMINI_API_KEY = "--------"
 
 @RunWith(AndroidJUnit4::class)
 class FindAccountTest {
