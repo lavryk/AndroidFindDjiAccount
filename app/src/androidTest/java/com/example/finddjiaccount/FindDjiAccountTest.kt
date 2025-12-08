@@ -36,7 +36,7 @@ const val EMAIL_SUFFIX : String = "@djifly.pl"
 const val PASS_PREFIX : String = "DJIfly87"
 const val START_COUNT : Int = 0
 const val CYCLE_COUNT : Int = 100
-const val GEMINI_API_KEY = "AIzaSyB6me-V_dwqp8xq96oYkQBIzxAJVvOBnjI"
+const val GEMINI_API_KEY = "--------"
 private var uiDevice: UiDevice? = null
 
 @RunWith(AndroidJUnit4::class)
