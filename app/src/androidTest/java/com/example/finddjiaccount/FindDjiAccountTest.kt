@@ -47,7 +47,7 @@ const val EMAIL_SUFFIX : String = "@djifly.pl"
 const val PASS_PREFIX : String = "DJIfly39"
 const val START_COUNT : Int = 10
 const val CYCLE_COUNT : Int = 100
-const val GEMINI_API_KEY = "AIzaSyDn4wvBkhXWsB2tvEYwIYDcomXaU_dAZG0"
+const val GEMINI_API_KEY = "---"
 
 var logFileName = "$EMAIL_PREFIX.log"
 
