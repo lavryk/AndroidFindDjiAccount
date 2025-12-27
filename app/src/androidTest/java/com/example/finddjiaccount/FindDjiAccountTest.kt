@@ -12,6 +12,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.Direction
+import androidx.test.uiautomator.StaleObjectException
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.UiObject
 import androidx.test.uiautomator.UiObject2
@@ -21,6 +22,9 @@ import androidx.test.uiautomator.uiAutomator
 import com.google.genai.Client
 import com.google.genai.types.Content
 import com.google.genai.types.Part
+import org.junit.After
+import org.junit.AfterClass
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.io.File
@@ -37,26 +41,36 @@ import java.nio.file.Paths
  * See [testing documentation](http://d.android.com/tools/testing).
  */
 
-const val SERIAL : String = "1581F7K3C251900CS94B"
-const val EMAIL_PREFIX : String = "d67"
+const val SERIAL : String = "1581F7K3C252N00DW2N1"
+const val EMAIL_PREFIX : String = "d39"
 const val EMAIL_SUFFIX : String = "@djifly.pl"
-const val PASS_PREFIX : String = "DJIfly67"
-const val START_COUNT : Int = 1
-const val CYCLE_COUNT : Int = 4
-const val GEMINI_API_KEY = "---"
-private var uiDevice: UiDevice? = null
+const val PASS_PREFIX : String = "DJIfly39"
+const val START_COUNT : Int = 10
+const val CYCLE_COUNT : Int = 100
+const val GEMINI_API_KEY = "AIzaSyDn4wvBkhXWsB2tvEYwIYDcomXaU_dAZG0"
 
 var logFileName = "$EMAIL_PREFIX.log"
 
 @RunWith(AndroidJUnit4::class)
 class FindAccountTest {
 
+    private lateinit var device: UiDevice;
+
+    @Before
+    fun setUp() {
+        device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+    }
+
     fun findSerialElement(email: String, passwd: String, items: List<UiObject2>) : Boolean {
         var found = false
         for (item in items) {
-            item.click()
+            try {
+                item.click()
+            } catch (e: StaleObjectException) {
+                e.printStackTrace()
+            }
             SystemClock.sleep(100L)
-            val serialTitle = getDevice().findObject(By.text("Серийный номер дрона"))
+            val serialTitle = device.findObject(By.text("Серийный номер дрона"))
             val serialObject = findNextSiblingElement(serialTitle)
             if(serialObject != null && serialObject.text.length > 1) {
                 logToFile("$email $passwd ${serialObject.text}")
@@ -68,9 +82,9 @@ class FindAccountTest {
         return found
     }
     fun findMatrice(email: String, passwd: String) : Boolean {
-        val panelObj = getDevice().findObject(By.clazz("androidx.recyclerview.widget.RecyclerView"))
+        val panelObj = device.findObject(By.clazz("androidx.recyclerview.widget.RecyclerView"))
         do {
-            val items = getDevice().findObjects(By.text("Matrice 4 Series"))
+            val items = device.findObjects(By.text("Matrice 4 Series"))
 
             if(items.count() < 2) {
                 break
@@ -84,29 +98,18 @@ class FindAccountTest {
 
         SystemClock.sleep(100L)
 
-        return findSerialElement(email, passwd,getDevice().findObjects(By.text("Matrice 4 Series")))
-    }
-
-    companion object {
-        @JvmStatic // Use @JvmStatic for Java interoperability if needed
-        @NonNull
-        fun getDevice(): UiDevice {
-            if (uiDevice == null) {
-                uiDevice = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
-            }
-            return uiDevice!!
-        }
+        return findSerialElement(email, passwd,device.findObjects(By.text("Matrice 4 Series")))
     }
 
     fun isCaptchaExists() : Boolean {
-        return getDevice().findObject(By.res("com.dji.industry.pilot:id/sign_in_verify_code_btn")) != null
+        return device.findObject(By.res("com.dji.industry.pilot:id/sign_in_verify_code_btn")) != null
     }
     fun resolveCaptcha() : String? {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val dir = context.filesDir
-        val img = getDevice().findObject(By.res("com.dji.industry.pilot:id/sign_in_verify_code_btn"))
+        val img = device.findObject(By.res("com.dji.industry.pilot:id/sign_in_verify_code_btn"))
         val rect = img.visibleBounds
-        val result: Boolean = getDevice().takeScreenshot(File("${dir}/screenshot.png"))
+        val result: Boolean = device.takeScreenshot(File("${dir}/screenshot.png"))
         if (result) {
             val cropped = Bitmap.createBitmap(
                 BitmapFactory.decodeFile(File("${dir}/screenshot.png").absolutePath),
@@ -145,25 +148,21 @@ class FindAccountTest {
     fun findNextSiblingElement(currentElement: UiObject2): UiObject2? {
         val parent = currentElement.parent
 
-        // Check if parent is not null
         if (parent != null) {
-            // Get all child elements of the parent
             val children = parent.children
 
-            // Find the current index of the current element
             val currentIndex = children.indexOf(currentElement)
 
-            // Check the next sibling
             if (currentIndex != -1 && currentIndex + 1 < children.size) {
                 return children[currentIndex + 1] // Return the next sibling
             }
         }
 
-        return null // Return null if no sibling found
+        return null
     }
 
     fun findInput(id: String) : UiObject {
-        return getDevice().findObject(UiSelector().resourceId(id))
+        return device.findObject(UiSelector().resourceId(id))
     }
 
     fun emailInput() : UiObject {
@@ -175,8 +174,8 @@ class FindAccountTest {
     }
 
     fun logOut() {
-        findInput("com.dji.industry.pilot:id/home_logout_btn").click()
-        getDevice().wait(
+        device.findObject(By.text("ВЫХОД")).click()
+        device.wait(
             Until.findObject(By.text("OK")),
             2000   // timeout ms
         )?.click()
@@ -191,7 +190,7 @@ class FindAccountTest {
         }
 
         findInput("com.dji.industry.pilot:id/toolbar_log_in").click()
-        getDevice().wait(
+        device.wait(
             Until.findObject(By.text("OK")),
             2000
         )?.click()
@@ -202,18 +201,18 @@ class FindAccountTest {
     }
 
     fun logoutLogin(username: String, password: String) : Boolean {
-        val enterObj = getDevice().findObject(By.text("Вход"))
+        val enterObj = device.findObject(By.text("Вход"))
         if(enterObj != null) {
             enterObj.click()
         } else {
             logOut()
-            getDevice().wait(
+            device.wait(
                 Until.findObject(By.text("Вход")),
                 2000
             )?.click()
         }
         SystemClock.sleep(200L)
-        repeat(3) {
+        repeat(5) {
             if(logIn( username, password)) {
                 return true
             }
@@ -248,11 +247,12 @@ class FindAccountTest {
         }
 
         val uri: Uri? = context.contentResolver.insert(MediaStore.Files.getContentUri("external"), contentValues)
-
-        uri?.let {
-            context.contentResolver.openOutputStream(it)?.use { outputStream ->
-                FileInputStream(logFile).use { inputStream ->
-                    inputStream.copyTo(outputStream)
+        if(logFile.exists()) {
+            uri?.let {
+                context.contentResolver.openOutputStream(it)?.use { outputStream ->
+                    FileInputStream(logFile).use { inputStream ->
+                        inputStream.copyTo(outputStream)
+                    }
                 }
             }
         }
@@ -275,7 +275,7 @@ class FindAccountTest {
                 val email = "$EMAIL_PREFIX$number$EMAIL_SUFFIX"
                 val passwd = "$PASS_PREFIX$number"
                 if(logoutLogin(email, passwd)) {
-                    findInput("com.dji.industry.pilot:id/item_title").click()
+                    device.findObject(By.text("Управление устройством")).click()
                     if(findMatrice(email, passwd)) {
                         println(email)
                         println(passwd)
@@ -285,8 +285,11 @@ class FindAccountTest {
                     }
                 }
             }
-            copyLogFileToMedia()
-
         }
+    }
+
+    @After
+    fun tearDown() {
+        copyLogFileToMedia()
     }
 }
