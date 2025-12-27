@@ -7,7 +7,6 @@ import android.net.Uri
 import android.os.Environment
 import android.os.SystemClock
 import android.provider.MediaStore
-import androidx.annotation.NonNull
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
@@ -22,7 +21,6 @@ import androidx.test.uiautomator.uiAutomator
 import com.google.genai.Client
 import com.google.genai.types.Content
 import com.google.genai.types.Part
-import org.junit.After
 import org.junit.AfterClass
 import org.junit.Before
 import org.junit.Test
@@ -34,6 +32,8 @@ import java.io.FileWriter
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Paths
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
 
 /**
  * Instrumented test, which will execute on an Android device.
@@ -42,19 +42,20 @@ import java.nio.file.Paths
  */
 
 const val SERIAL : String = "1581F7K3C252N00DW2N1"
-const val EMAIL_PREFIX : String = "d39"
+const val EMAIL_PREFIX : String = "d40"
 const val EMAIL_SUFFIX : String = "@djifly.pl"
-const val PASS_PREFIX : String = "DJIfly39"
-const val START_COUNT : Int = 10
+const val PASS_PREFIX : String = "DJIfly40"
+const val START_COUNT : Int = 67
 const val CYCLE_COUNT : Int = 100
-const val GEMINI_API_KEY = "---"
-
-var logFileName = "$EMAIL_PREFIX.log"
+const val GEMINI_API_KEY = "-"
+val currentTime: LocalTime = LocalTime.now()
+val formatter: DateTimeFormatter = DateTimeFormatter.ofPattern("HHmmss")
+var logFileName = "${EMAIL_PREFIX}_${currentTime.format(formatter)}.log"
 
 @RunWith(AndroidJUnit4::class)
 class FindAccountTest {
 
-    private lateinit var device: UiDevice;
+    private lateinit var device: UiDevice
 
     @Before
     fun setUp() {
@@ -237,31 +238,17 @@ class FindAccountTest {
         }
     }
 
-    fun copyLogFileToMedia() {
-        val context = InstrumentationRegistry.getInstrumentation().targetContext
-        val logFile = File(context.getExternalFilesDir(null), logFileName)
-        val contentValues = ContentValues().apply {
-            put(MediaStore.MediaColumns.DISPLAY_NAME, logFileName)
-            put(MediaStore.MediaColumns.MIME_TYPE, "text/plain")
-            put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOCUMENTS)
-        }
-
-        val uri: Uri? = context.contentResolver.insert(MediaStore.Files.getContentUri("external"), contentValues)
-        if(logFile.exists()) {
-            uri?.let {
-                context.contentResolver.openOutputStream(it)?.use { outputStream ->
-                    FileInputStream(logFile).use { inputStream ->
-                        inputStream.copyTo(outputStream)
-                    }
-                }
-            }
-        }
-    }
     @Test
     fun useAppContext() {
         uiAutomator {
             device.findObject(By.text("DJI Pilot 2")).click()
             SystemClock.sleep(200L)
+
+            device.wait(
+                Until.findObject(By.text("Не сейчас")),
+                2000
+            )?.click()
+
             val listItems = onElements {
                 isClickable
             }
@@ -288,8 +275,33 @@ class FindAccountTest {
         }
     }
 
-    @After
-    fun tearDown() {
-        copyLogFileToMedia()
+    companion object {
+        @JvmStatic
+        fun copyLogFileToMedia() {
+            val context = InstrumentationRegistry.getInstrumentation().targetContext
+            val logFile = File(context.getExternalFilesDir(null), logFileName)
+            val contentValues = ContentValues().apply {
+                put(MediaStore.MediaColumns.DISPLAY_NAME, logFileName)
+                put(MediaStore.MediaColumns.MIME_TYPE, "text/plain")
+                put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOCUMENTS)
+            }
+
+            val uri: Uri? = context.contentResolver.insert(MediaStore.Files.getContentUri("external"), contentValues)
+            if(logFile.exists()) {
+                uri?.let {
+                    context.contentResolver.openOutputStream(it)?.use { outputStream ->
+                        FileInputStream(logFile).use { inputStream ->
+                            inputStream.copyTo(outputStream)
+                        }
+                    }
+                }
+            }
+        }
+
+        @AfterClass
+        @JvmStatic
+        fun tearDown() {
+            copyLogFileToMedia()
+        }
     }
 }
